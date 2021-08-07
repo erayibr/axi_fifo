@@ -1,0 +1,14 @@
+[options]
+mode prove
+
+[engines]
+smtbmc
+
+[script]
+read -formal demo.sv
+read -formal demo_tb.sv
+prep -top demo_tb
+
+[files]
+../rtl/demo.sv
+../sim/demo_tb.sv

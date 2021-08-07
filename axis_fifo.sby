@@ -1,0 +1,14 @@
+[options]
+mode prove
+
+[engines]
+smtbmc
+
+[script]
+read -formal axis_fifo.v
+prep -top axis_fifo
+
+[files]
+../rtl/axis_fifo.v
+axis_fifo_formal.svh
+
