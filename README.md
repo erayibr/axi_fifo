@@ -1,1 +1,1 @@
-# Formally verified AXI Streming FIFO with Verilog
+# Formally verified AXI Streaming FIFO with Verilog
