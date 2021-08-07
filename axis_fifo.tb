@@ -1,0 +1,103 @@
+// Module description: testbench for fifo module with AXIS signals
+
+
+`timescale 1ns / 1ps
+
+module axis_fifo_tb
+	#(parameter DEPTH = 8, WIDTH = 32, CLK_PERIOD = 4);
+
+	reg clk;
+    integer seed = 2;
+	reg temp;
+
+	//AXIS Slave Interface
+	wire s_axis_tready;
+    reg s_axis_tvalid;
+    reg [(WIDTH - 1):0] s_axis_tdata;
+    reg [(WIDTH/8 - 1):0] s_axis_tkeep;
+    reg s_axis_tlast;
+
+    //AXIS Master Interface
+    reg m_axis_tready;
+    wire m_axis_tvalid;
+    wire [(WIDTH - 1):0] m_axis_tdata;
+    wire [(WIDTH/8 - 1):0] m_axis_tkeep;
+    wire m_axis_tlast;
+
+
+	wire pc_asserted_s, pc_asserted_m;
+	wire [(WIDTH - 1):0] pc_status_m, pc_status_s;
+	reg areset_n;
+
+	axis_fifo DUT(.aclk(clk),
+			 .areset_n(areset_n),	 
+			 .s_axis_tvalid(s_axis_tvalid),
+			 .s_axis_tdata(s_axis_tdata),
+			 .s_axis_tkeep(s_axis_tkeep),
+			 .s_axis_tlast(s_axis_tlast),
+			 .s_axis_tready(s_axis_tready),
+			 .m_axis_tvalid(m_axis_tvalid),
+			 .m_axis_tdata(m_axis_tdata),
+			 .m_axis_tkeep(m_axis_tkeep),
+			 .m_axis_tlast(m_axis_tlast),
+			 .m_axis_tready(m_axis_tready));
+
+    axis_protocol_checker_0 VIP_0 (.aclk(clk), 
+			 .pc_axis_tvalid(m_axis_tvalid),
+			 .pc_axis_tlast(m_axis_tlast),
+			 .pc_axis_tdata(m_axis_tdata),
+			 .pc_axis_tkeep(m_axis_tkeep),
+			 .pc_axis_tready(m_axis_tready),
+			 .pc_asserted(pc_asserted_m),
+			 .pc_status(pc_status_m),
+			 .aresetn(areset_n));
+
+    axis_protocol_checker_1 VIP_1 (.aclk(clk), 
+			 .pc_axis_tvalid(s_axis_tvalid),
+			 .pc_axis_tlast(s_axis_tlast),
+			 .pc_axis_tdata(s_axis_tdata),
+			 .pc_axis_tkeep(s_axis_tkeep),
+			 .pc_axis_tready(s_axis_tready),
+			 .pc_asserted(pc_asserted_s),
+			 .pc_status(pc_status_s),
+			 .aresetn(areset_n));
+
+
+    initial begin
+		clk <= 0;
+		areset_n <= 0;
+		s_axis_tkeep <= $random(seed);
+		s_axis_tvalid <= 1;
+		m_axis_tready <= $random(seed);
+		s_axis_tlast <= $random(seed);
+		s_axis_tdata <= $random(seed);
+		#(5000*CLK_PERIOD) $finish;
+	end
+
+	always #(CLK_PERIOD/2) clk <= ~clk;
+	
+	always @(negedge clk) temp = $random(seed);
+	
+	always @(posedge clk) begin
+		
+		if(s_axis_tready || ~areset_n) begin
+			
+			if(temp & areset_n) begin
+				s_axis_tkeep <= $random(seed);
+				s_axis_tlast <= $random(seed);
+				s_axis_tdata <= $random(seed);
+				s_axis_tvalid <= temp;
+			end
+
+			else
+				s_axis_tvalid <= 0;
+		end
+
+		if(m_axis_tvalid)
+			m_axis_tready <= ($random(seed) % 3 == 0) ? 1 : 0;
+			
+		areset_n <= ($random(seed) % (DEPTH*10) == 0) ? 0 : 1 ;
+
+	end
+
+endmodule
